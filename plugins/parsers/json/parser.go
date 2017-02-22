@@ -15,6 +15,7 @@ import (
 type JSONParser struct {
 	MetricName  string
 	TagKeys     []string
+	BasePath    string
 	DefaultTags map[string]string
 }
 
@@ -76,8 +77,24 @@ func (p *JSONParser) Parse(buf []byte) ([]telegraf.Metric, error) {
 			err = fmt.Errorf("unable to parse out as JSON, %s", err)
 			return nil, err
 		}
-		return p.parseObject(metrics, jsonOut)
+
+		if len(p.BasePath) > 0 {
+			switch v := jsonOut[p.BasePath].(type) {
+			case map[string]interface{}:
+				return p.parseObject(metrics, v)
+			case []interface{}:
+				for _, item := range v {
+					if o, ok := item.(map[string]interface{}); ok {
+						metrics, err = p.parseObject(metrics, o)
+					}
+				}
+				return metrics, nil
+			}
+		} else {
+			return p.parseObject(metrics, jsonOut)
+		}
 	}
+
 	return p.parseArray(buf)
 }
 
@@ -110,7 +127,7 @@ func (f *JSONFlattener) FlattenJSON(
 	if f.Fields == nil {
 		f.Fields = make(map[string]interface{})
 	}
-	return f.FullFlattenJSON(fieldname, v, false, false)
+	return f.FullFlattenJSON(fieldname, v, true, true)
 }
 
 // FullFlattenJSON flattens nested maps/interfaces into a fields map (including bools and string)

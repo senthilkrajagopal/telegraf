@@ -97,6 +97,21 @@ func NewJSONParser(
 	return parser, nil
 }
 
+func NewCustomJSONParser(
+	metricName string,
+	tagKeys []string,
+	basePath string,
+	defaultTags map[string]string,
+) (Parser, error) {
+	parser := &json.JSONParser{
+		MetricName:  metricName,
+		TagKeys:     tagKeys,
+		BasePath:    basePath,
+		DefaultTags: defaultTags,
+	}
+	return parser, nil
+}
+
 func NewNagiosParser() (Parser, error) {
 	return &nagios.NagiosParser{}, nil
 }
