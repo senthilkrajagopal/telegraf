@@ -16,6 +16,7 @@ type JSONParser struct {
 	MetricName  string
 	TagKeys     []string
 	BasePath    string
+	FieldMap    map[string]string
 	DefaultTags map[string]string
 }
 
@@ -54,9 +55,17 @@ func (p *JSONParser) parseObject(metrics []telegraf.Metric, jsonOut map[string]i
 	}
 
 	f := JSONFlattener{}
-	err := f.FlattenJSON("", jsonOut)
-	if err != nil {
-		return nil, err
+
+	if len(p.FieldMap) == 0 {
+		err := f.FlattenJSON("", jsonOut)
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		err := f.ExtractJSON(p.FieldMap, jsonOut)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	metric, err := metric.New(p.MetricName, tags, f.Fields, time.Now().UTC())
@@ -118,6 +127,33 @@ func (p *JSONParser) SetDefaultTags(tags map[string]string) {
 
 type JSONFlattener struct {
 	Fields map[string]interface{}
+}
+
+// Extract data based on FieldMap
+func (f *JSONFlattener) ExtractJSON(
+	fieldMap map[string]string,
+	jsonOut interface{}) error {
+	if f.Fields == nil {
+		f.Fields = make(map[string]interface{})
+	}
+
+	switch t := jsonOut.(type) {
+	case map[string]interface{}:
+		for k, v := range fieldMap {
+			switch v {
+			case "float":
+				if o, ok := t[k].(string); ok {
+					f.Fields[k], _ = strconv.ParseFloat(o, 64)
+				}
+			default:
+				f.Fields[k] = t[k]
+			}
+		}
+	default:
+		return fmt.Errorf("JSON Extractor: got unexpected type %T with value %v",
+			t, t)
+	}
+	return nil
 }
 
 // FlattenJSON flattens nested maps/interfaces into a fields map (ignoring bools and string)

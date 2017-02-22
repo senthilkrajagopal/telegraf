@@ -24,6 +24,7 @@ type HttpJson struct {
 	TagKeys         []string
 	BasePath        string
 	ResponseTimeout internal.Duration
+	FieldMap        map[string]string
 	Parameters      map[string]string
 	Headers         map[string]string
 
@@ -196,7 +197,7 @@ func (h *HttpJson) gatherServer(
 		"server": serverURL,
 	}
 
-	parser, err := parsers.NewCustomJSONParser(msrmnt_name, h.TagKeys, h.BasePath, tags)
+	parser, err := parsers.NewCustomJSONParser(msrmnt_name, h.TagKeys, h.BasePath, h.FieldMap, tags)
 	if err != nil {
 		return err
 	}

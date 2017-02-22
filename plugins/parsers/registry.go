@@ -101,12 +101,14 @@ func NewCustomJSONParser(
 	metricName string,
 	tagKeys []string,
 	basePath string,
+	fieldMap map[string]string,
 	defaultTags map[string]string,
 ) (Parser, error) {
 	parser := &json.JSONParser{
 		MetricName:  metricName,
 		TagKeys:     tagKeys,
 		BasePath:    basePath,
+		FieldMap:    fieldMap,
 		DefaultTags: defaultTags,
 	}
 	return parser, nil

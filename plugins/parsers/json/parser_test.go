@@ -13,14 +13,14 @@ const validGslbData = `
 	"severity": "NONE",
 	"gslbvserver": [{
 		"name": "capi.glb.cisco.com",
-		"conn": 0,
+		"conn": "0",
 		"status": "1",
-		"health": "0"
+		"health": "11"
 	}, {
 		"name": "qagslb.glb.cisco.com",
-		"establishedconn": 0,
-		"status": "1",
-		"health": "0"
+		"establishedconn": "0",
+		"status": "2",
+		"health": "22"
 	}]
 }
 `
@@ -31,9 +31,25 @@ func TestGslbData(t *testing.T) {
 		MetricName: "httpjson_gslb_dnsrecords",
 		BasePath:   "gslbvserver",
 		TagKeys:    []string{"name"},
+		FieldMap: map[string]string{
+			"status": "float",
+			"health": "float",
+			"conn":   "",
+		},
 	}
 	metrics, err := parser.Parse([]byte(validGslbData))
 	assert.NoError(t, err)
 	assert.Len(t, metrics, 2)
+
+	assert.Equal(t, "httpjson_gslb_dnsrecords", metrics[0].Name())
+	assert.Equal(t, map[string]interface{}{
+		"status": float64(1),
+		"health": float64(11),
+		"conn":   "0",
+	}, metrics[0].Fields())
+	assert.Equal(t, map[string]string{"name": "capi.glb.cisco.com"}, metrics[0].Tags())
+
+	assert.Equal(t, "httpjson_gslb_dnsrecords", metrics[1].Name())
+	assert.Equal(t, map[string]string{"name": "qagslb.glb.cisco.com"}, metrics[1].Tags())
 
 }
